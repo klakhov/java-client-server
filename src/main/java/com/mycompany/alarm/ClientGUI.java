@@ -4,6 +4,21 @@
  */
 package com.mycompany.alarm;
 
+import com.github.lgooddatepicker.components.DateTimePicker;
+import com.github.lgooddatepicker.components.TimePickerSettings;
+import com.github.lgooddatepicker.optionalusertools.PickerUtilities;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.WindowEvent;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+
 /**
  *
  * @author kirill
@@ -11,6 +26,7 @@ package com.mycompany.alarm;
 public class ClientGUI extends javax.swing.JFrame {
     
     Client client;
+    ArrayList<Event> clientEvents = new ArrayList<>();
 
     /**
      * Creates new form ClientGUI
@@ -22,6 +38,45 @@ public class ClientGUI extends javax.swing.JFrame {
     
     public void notifyTimer(String message){
         jLabel1.setText(message);
+    }
+    
+    public void showNotification(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
+    
+    public void setEvents(ArrayList<Event> events){
+        clientEvents.clear();
+        addNewEvents(events);
+    }
+    
+    public void addNewEvents(ArrayList<Event> events){
+        clientEvents.addAll(events);
+        renderEvents();
+    }
+    
+    public void removeEvent(Event event) {
+        ArrayList<Event> pastEvents = new ArrayList();
+        for(Event e: clientEvents){
+            if(event.id.toString().equals(e.id.toString())){
+                pastEvents.add(e);
+            }
+        }
+        clientEvents.removeAll(pastEvents);
+        renderEvents();
+    }
+    
+    private void renderEvents(){
+        JPanel panel = new JPanel(new FlowLayout());
+        clientEvents.forEach((e)->{
+            JPanel eventPanel = new JPanel(new FlowLayout());
+            JLabel time = new JLabel(e.timestamp);
+            JLabel message = new JLabel(e.message);
+            eventPanel.add(time);
+            eventPanel.add(message);
+            panel.add(eventPanel);
+        });
+
+        jScrollPane1.setViewportView(panel);
     }
 
     /**
@@ -35,6 +90,9 @@ public class ClientGUI extends javax.swing.JFrame {
 
         jButton1 = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
+        jButton2 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
+        jScrollPane1 = new javax.swing.JScrollPane();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -47,25 +105,56 @@ public class ClientGUI extends javax.swing.JFrame {
 
         jLabel1.setText("Timer");
 
+        jButton2.setText("syncTime");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
+        jButton3.setText("Add event");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+
+        jScrollPane1.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jButton1)
-                .addGap(45, 45, 45)
-                .addComponent(jLabel1)
-                .addContainerGap(206, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jButton1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jButton2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jButton3))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(121, 121, 121)
+                        .addComponent(jLabel1))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jScrollPane1)))
+                .addContainerGap(14, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(25, 25, 25)
+                .addContainerGap()
+                .addComponent(jLabel1)
+                .addGap(3, 3, 3)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
-                    .addComponent(jLabel1))
-                .addContainerGap(155, Short.MAX_VALUE))
+                    .addComponent(jButton2)
+                    .addComponent(jButton3))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 143, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         pack();
@@ -77,6 +166,45 @@ public class ClientGUI extends javax.swing.JFrame {
         });
         frontend.start();
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        Thread syncThread = new Thread (() -> {
+            client.syncRequest();
+        });
+        syncThread.start();
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        JFrame frame = new JFrame();
+        frame.setLayout(new FlowLayout());
+        frame.setSize(new Dimension(360, 280));
+        frame.setLocationRelativeTo(null);
+        
+        TimePickerSettings timeSettings = new TimePickerSettings();
+        timeSettings.use24HourClockFormat();
+        DateTimeFormatter displayTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME;
+        timeSettings.setFormatForDisplayTime(displayTimeFormatter);
+        timeSettings.setFormatForMenuTimes(
+        PickerUtilities.createFormatterFromPatternString("HH:mm", timeSettings.getLocale()));
+
+        DateTimePicker dateTimePicker = new DateTimePicker(null, timeSettings);
+       
+        frame.add(dateTimePicker);
+       
+        JTextArea textArea = new JTextArea(5, 20);
+        frame.add(textArea);
+        
+        JButton b = new JButton("Submit");
+        b.addActionListener((e)->{
+             Event event = new Event(dateTimePicker.getDateTimeStrict(), textArea.getText());
+             client.newEventRequest(event);
+             frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+        });
+        frame.add(b);
+        
+        
+        frame.setVisible(true);
+    }//GEN-LAST:event_jButton3ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -115,6 +243,9 @@ public class ClientGUI extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
 }

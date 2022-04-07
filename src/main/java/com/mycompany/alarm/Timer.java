@@ -36,9 +36,9 @@ public class Timer {
         timeThread = new Thread(()-> {
             while(started){
                 try {
-                    currentTime = currentTime.plusSeconds(1);
-                    observer.timerTick(currentTime);
                     Thread.sleep(1000);
+                    setTime(currentTime.plusSeconds(1));
+                    observer.timerTick(currentTime);
                 } catch (InterruptedException ex) {
                     Logger.getLogger(Timer.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -51,11 +51,11 @@ public class Timer {
         started = false;
     }
     
-    public void setTime(String time){
+    public synchronized void setTime(String time){
         currentTime = LocalDateTime.parse(time);
     }
     
-    public void setTime(LocalDateTime time){
+    public synchronized void setTime(LocalDateTime time){
         currentTime = time;
     }
 }

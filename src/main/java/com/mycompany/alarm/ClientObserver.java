@@ -8,6 +8,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.google.gson.Gson;
 import java.io.OutputStream;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.UUID;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -21,6 +24,7 @@ import java.io.OutputStream;
 public class ClientObserver {
   Server server;
   Socket cs;
+  UUID clientId;
 
   DataInputStream dis;
   DataOutputStream dos;
@@ -32,6 +36,7 @@ public class ClientObserver {
   public ClientObserver(Socket cs, Server server) {
     this.cs = cs;
     this.server = server;
+    this.clientId = UUID.randomUUID();
     System.out.println("Подключился клиент  \n");
     
     try {
@@ -42,34 +47,67 @@ public class ClientObserver {
       try {
         dis = new DataInputStream(cs.getInputStream());
         dos = new DataOutputStream(cs.getOutputStream());
-        // TODO
-        // wait for new events from client
-        // (in parallel send from timer)
-        while (true) {          
-            // send sync data
-            Message message = new Message("sync", server.timer.currentTime.toString());
-            String messageJson = convert.toJson(message);
-            dos.writeUTF(messageJson);
-            Thread.sleep(2000);
-//          Msg msg = convert.fromJson(obj, Msg.class);
-//          System.out.println("Получил " + msg);
-//          m.setP(msg.getP(), msg.getId());
-          
+        while (true) {
+            String messageJson;
+            messageJson = dis.readUTF();
+            Message message = convert.fromJson(messageJson, Message.class);
+            if("sync".equals(message.action)){
+                System.out.println(clientId+" Sever Got sync message");
+                server.newSyncClientRequest(this);
+            } else if ("new-event".equals(message.action)){
+                System.out.println(clientId+" Sever Got new event message");
+                server.newEventClientRequest(this, message.event);
+            }
         }
         
       } catch (IOException ex) {
-      }   catch (InterruptedException ex) {
-              Logger.getLogger(ClientObserver.class.getName()).log(Level.SEVERE, null, ex);
-          }
-       
+      }   
       }
     );
     clientThread.start();
-
-    
     } catch (IOException ex) {
       Logger.getLogger(ClientObserver.class.getName()).log(Level.SEVERE, null, ex);
     }
 }
-
+  public void sync(LocalDateTime newTime, ArrayList<Event> events){
+      Message message = new Message();
+      message.setId(clientId);
+      message.setAction("sync");
+      message.setServerTime(newTime.toString());
+      message.setNewEvents(events);
+      String messageJson = convert.toJson(message);
+      try {
+          dos.writeUTF(messageJson);
+      } catch (IOException ex) {
+          Logger.getLogger(ClientObserver.class.getName()).log(Level.SEVERE, null, ex);
+      }
+  }
+  
+  public void sendEvent(Event event){
+      Message message = new Message();
+      message.setId(clientId);
+      message.setAction("event");
+      message.setServerTime(server.timer.currentTime.toString());
+      message.setEvent(event);
+      String messageJson = convert.toJson(message);
+      try {
+          dos.writeUTF(messageJson);
+      } catch (IOException ex) {
+          Logger.getLogger(ClientObserver.class.getName()).log(Level.SEVERE, null, ex);
+      }
+  }
+  
+    public void sendNewEvents(ArrayList<Event> events){
+      Message message = new Message();
+      message.setId(clientId);
+      message.setAction("new-event");
+      message.setServerTime(server.timer.currentTime.toString());
+      message.setNewEvents(events);
+      String messageJson = convert.toJson(message);
+      try {
+          dos.writeUTF(messageJson);
+      } catch (IOException ex) {
+          Logger.getLogger(ClientObserver.class.getName()).log(Level.SEVERE, null, ex);
+      }
+  }
 }

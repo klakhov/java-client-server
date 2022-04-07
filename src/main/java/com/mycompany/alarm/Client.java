@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,6 +34,8 @@ public class Client implements IAlarmObserver{
     DataOutputStream dos;
     Gson convert = new Gson();
     
+    UUID clientId;
+    
     public Client(ClientGUI gui){
         this.gui = gui;
     }
@@ -49,25 +52,57 @@ public class Client implements IAlarmObserver{
             cs = new Socket(ip, port);
             dis = new DataInputStream(cs.getInputStream());
             dos = new DataOutputStream(cs.getOutputStream());
+            syncRequest();
             while(true){
                 String messageJson;
                 messageJson = dis.readUTF();
                 Message message = convert.fromJson(messageJson, Message.class);
                 if("sync".equals(message.action)){
+                    clientId = message.clientId;
+                    System.out.println(clientId+" Client Got sync message");
                     if(clientTimer != null){
-                        System.out.println("Got sync message");
                         clientTimer.setTime(message.serverTime);
                     } else {
                         clientTimer = new Timer(this, message.serverTime);
                         clientTimer.startTimer();
                     }
+                    gui.setEvents(message.newEvents);
+                } else if ("event".equals(message.action)) {
+                    System.out.println(clientId+" Client Got event message");
+                    gui.removeEvent(message.event);
+                    gui.showNotification(message.event.message+" on " + message.event.timestamp);
+                } else if ("new-event".equals(message.action)) {
+                    System.out.println(clientId+" Client Got new event message");
+                    gui.addNewEvents(message.newEvents);
                 }
-                
             }
         } catch (IOException ex) {
           Logger.getLogger(ClientObserver.class.getName()).log(Level.SEVERE, null, ex);
         }
-
+    }
+    
+    public void syncRequest(){
+        Message message = new Message();
+        message.setAction("sync");
+        String messageJson = convert.toJson(message);
+        try {
+            dos.writeUTF(messageJson);
+        } catch (IOException ex) {
+            Logger.getLogger(ClientObserver.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void newEventRequest(Event event) {
+        Message message = new Message();
+        message.setAction("new-event");
+        message.setId(clientId);
+        message.setEvent(event);
+        String messageJson = convert.toJson(message);
+        try {
+            dos.writeUTF(messageJson);
+        } catch (IOException ex) {
+            Logger.getLogger(ClientObserver.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
