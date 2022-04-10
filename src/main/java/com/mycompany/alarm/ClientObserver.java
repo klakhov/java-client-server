@@ -37,13 +37,11 @@ public class ClientObserver {
     this.cs = cs;
     this.server = server;
     this.clientId = UUID.randomUUID();
-    System.out.println("Подключился клиент  \n");
+    System.out.println("Client connected  \n");
     
-    try {
-      dos = new DataOutputStream(cs.getOutputStream());
     
-      Thread clientThread = new Thread(
-      ()->{
+    Thread clientThread = new Thread(
+    ()->{
       try {
         dis = new DataInputStream(cs.getInputStream());
         dos = new DataOutputStream(cs.getOutputStream());
@@ -61,13 +59,12 @@ public class ClientObserver {
         }
         
       } catch (IOException ex) {
+            System.out.println(" Client disconnected");
+            server.disconnectClient(this);
       }   
       }
     );
     clientThread.start();
-    } catch (IOException ex) {
-      Logger.getLogger(ClientObserver.class.getName()).log(Level.SEVERE, null, ex);
-    }
 }
   public void sync(LocalDateTime newTime, ArrayList<Event> events){
       Message message = new Message();

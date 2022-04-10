@@ -72,12 +72,12 @@ public class Server implements IAlarmObserver {
     @Override
     public void timerTick(LocalDateTime newTime){
         String timerRepresentation = 
-                newTime.getYear()+"-"+
+                newTime.getYear() +"-"+
                 newTime.getMonth()+"-"+
                 newTime.getDayOfMonth()+" "+
-                newTime.getHour() + ":"+
-                newTime.getMinute()+":"+
-                newTime.getSecond();
+                (newTime.getHour()/10 == 0 ? "0"+newTime.getHour() : newTime.getHour()) + ":"+
+                (newTime.getMinute()/10 == 0 ? "0"+newTime.getMinute() : newTime.getMinute())+":"+
+                (newTime.getSecond()/10 == 0 ? "0"+newTime.getSecond() : newTime.getSecond());
         gui.notifyTimer(timerRepresentation);
         
         Thread syncThread = new Thread(() -> {
@@ -140,6 +140,12 @@ public class Server implements IAlarmObserver {
         
         synchronized (newEvents){
             newEvents.add(event);
+        }
+    }
+    
+    public void disconnectClient(ClientObserver client) {
+        synchronized (clients) {
+            clients.remove(client);
         }
     }
 }

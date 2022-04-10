@@ -67,6 +67,7 @@ public class ClientGUI extends javax.swing.JFrame {
     
     private void renderEvents(){
         JPanel panel = new JPanel(new FlowLayout());
+        panel.setPreferredSize(new Dimension(jScrollPane1.getWidth(), 500));
         clientEvents.forEach((e)->{
             JPanel eventPanel = new JPanel(new FlowLayout());
             JLabel time = new JLabel(e.timestamp);
