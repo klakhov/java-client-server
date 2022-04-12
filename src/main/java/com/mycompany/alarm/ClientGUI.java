@@ -57,7 +57,7 @@ public class ClientGUI extends javax.swing.JFrame {
     public void removeEvent(Event event) {
         ArrayList<Event> pastEvents = new ArrayList();
         for(Event e: clientEvents){
-            if(event.id.toString().equals(e.id.toString())){
+            if(event.getID().toString().equals(e.getID().toString())){
                 pastEvents.add(e);
             }
         }
@@ -70,8 +70,8 @@ public class ClientGUI extends javax.swing.JFrame {
         panel.setPreferredSize(new Dimension(jScrollPane1.getWidth(), 500));
         clientEvents.forEach((e)->{
             JPanel eventPanel = new JPanel(new FlowLayout());
-            JLabel time = new JLabel(e.timestamp);
-            JLabel message = new JLabel(e.message);
+            JLabel time = new JLabel(e.getTimestamp().toString());
+            JLabel message = new JLabel(e.getMessage());
             eventPanel.add(time);
             eventPanel.add(message);
             panel.add(eventPanel);

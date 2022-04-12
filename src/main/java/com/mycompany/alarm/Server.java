@@ -30,7 +30,7 @@ public class Server implements IAlarmObserver {
     
     public final LinkedHashSet<ClientObserver> syncQueue = new LinkedHashSet();
     public final ArrayList<ClientObserver> clients = new ArrayList();
-    public final ArrayList<Event> events = new ArrayList();
+    public final ArrayList<Event> events = DB.getAllEvents();
     public final ArrayList<Event> newEvents = new ArrayList();
 
 
@@ -43,6 +43,7 @@ public class Server implements IAlarmObserver {
         if (started) return;
         started = true;
         try {
+            System.out.println(events);
             timer = new Timer(this);
             timer.startTimer();
             ip = InetAddress.getLocalHost();
@@ -97,6 +98,7 @@ public class Server implements IAlarmObserver {
                 LocalDateTime currentMoment = LocalDateTime.now();
                 ArrayList<Event> pastEvents = new ArrayList();
                 events.forEach((event) -> {
+                    System.out.println(currentMoment.isAfter(event.getTimestamp()));
                     if(currentMoment.isAfter(event.getTimestamp())) {
                         pastEvents.add(event);
                         synchronized (clients){
@@ -106,7 +108,11 @@ public class Server implements IAlarmObserver {
                         }
                     }
                 });
+                pastEvents.forEach(event -> {
+                    DB.removeEvent(event);
+                });
                 events.removeAll(pastEvents);
+                System.out.println(events);
             }
         });
         eventNotificationThread.start();
@@ -136,6 +142,7 @@ public class Server implements IAlarmObserver {
         synchronized (events){
             event.setId(UUID.randomUUID());
             events.add(event);
+            DB.saveEvent(event);
         }
         
         synchronized (newEvents){

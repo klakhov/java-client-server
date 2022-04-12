@@ -57,23 +57,28 @@ public class Client implements IAlarmObserver{
                 String messageJson;
                 messageJson = dis.readUTF();
                 Message message = convert.fromJson(messageJson, Message.class);
-                if("sync".equals(message.action)){
-                    clientId = message.clientId;
-                    System.out.println(clientId+" Client Got sync message");
-                    if(clientTimer != null){
-                        clientTimer.setTime(message.serverTime);
-                    } else {
-                        clientTimer = new Timer(this, message.serverTime);
-                        clientTimer.startTimer();
+                if(null != message.action)switch (message.action) {
+                    case "sync" -> {
+                        clientId = message.clientId;
+                        System.out.println(clientId+" Client Got sync message");
+                        if(clientTimer != null){
+                            clientTimer.setTime(message.serverTime);
+                        } else {
+                            clientTimer = new Timer(this, message.serverTime);
+                            clientTimer.startTimer();
+                        }   gui.setEvents(message.newEvents);
                     }
-                    gui.setEvents(message.newEvents);
-                } else if ("event".equals(message.action)) {
-                    System.out.println(clientId+" Client Got event message");
-                    gui.removeEvent(message.event);
-                    gui.showNotification(message.event.message+" on " + message.event.timestamp);
-                } else if ("new-event".equals(message.action)) {
-                    System.out.println(clientId+" Client Got new event message");
-                    gui.addNewEvents(message.newEvents);
+                    case "event" -> {
+                        System.out.println(clientId+" Client Got event message");
+                        gui.removeEvent(message.event);
+                        gui.showNotification(message.event.getMessage()+" on " + message.event.getTimestamp());
+                    }
+                    case "new-event" -> {
+                        System.out.println(clientId+" Client Got new event message");
+                        gui.addNewEvents(message.newEvents);
+                    }
+                    default -> {
+                    }
                 }
             }
         } catch (IOException ex) {
